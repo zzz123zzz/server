@@ -10,8 +10,7 @@ import org.springframework.stereotype.Controller;
 public class TestController {
     private TestService impl = (TestService) Server.getApplicationContext().getBean(TestService.class);
     @Route("login")
-    public Object login(){
-
+    public Object login(String name,String password){
         impl.test();
         return "login";
     }

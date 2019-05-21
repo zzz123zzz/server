@@ -49,7 +49,7 @@ public class ClassUtil {
                         className  = (name+"."+file.getName()).replace(".class", "");
                     }
                     className = className.replaceAll("/","\\.");
-                    System.out.println(className);
+
                     cls.add(Class.forName(className));
                 } catch (ClassNotFoundException e) {
                     e.printStackTrace();

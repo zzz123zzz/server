@@ -2,10 +2,8 @@ package com.yzx.server.route;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.yzx.server.bean.Result;
+import com.yzx.server.proto.MessageProto;
 import com.yzx.server.util.ClassUtil;
-import com.yzx.server.util.PropertiesReadUtil;
-import com.yzx.server.util.StringUtil;
 import io.netty.channel.Channel;
 import org.apache.ibatis.javassist.ClassPool;
 import org.apache.ibatis.javassist.CtClass;
@@ -43,23 +41,13 @@ public class RouteUtil {
             List<String> classTypes = new ArrayList<String>();
             for (Class clz:cls){
                 if(clz.isAnnotationPresent(Routes.class)){
-                    Routes controller = (Routes) clz.getAnnotation(Routes.class);
-                    String controllerValue = controller.value();
-                    if (StringUtil.isEmpty(controllerValue)){
-                        controllerValue = clz.getName();
-                    }
-                    if(classTypes.contains(controllerValue)){
-                        throw new RuntimeException("此类注解名已存在!");
-                    }
-                    classTypes.add(controllerValue);
-                    Method[] methods = clz.getMethods();
                     Route classRoute = (Route) clz.getAnnotation(Route.class);
                     String classRouteValue = "";
                     if (classRoute != null){
                         classRouteValue = classRoute.value();
                         classRouteValue = classRouteValue.indexOf("/")== 0 ? classRouteValue : "/"+classRouteValue;
                     }
-
+                    Method[] methods = clz.getMethods();
                     for (Method method:methods) {
                         if (method.isAnnotationPresent(Route.class)){
                             String methodVaule = method.getAnnotation(Route.class).value();
@@ -87,9 +75,9 @@ public class RouteUtil {
         }
         return  routeUtil;
     }
-    public void route(Channel channel, String s){
-        JSONObject json = JSON.parseObject(s);
-        String route = json.getString("route");
+    public void route(Channel channel, MessageProto.Request request){
+        JSONObject json = JSON.parseObject(request.getBody());
+        String route = request.getRoute();
         route = route.indexOf("/") == 0?route:"/"+route;
         ClassAndMethodDTO dto = map.get(route);
         if (dto==null) {
@@ -107,12 +95,13 @@ public class RouteUtil {
             Object obj = getObject(clz);
             //执行方法
             Object result = method.invoke(obj,parameters.toArray());
-            channel.writeAndFlush(JSON.toJSONString(result)).sync();
+            MessageProto.Response response = MessageProto.Response.newBuilder().setBody(JSON.toJSONString(result)).setStatus(200).build();
+            channel.writeAndFlush(response).sync();
         } catch (Exception e) {
             try {
                 e.printStackTrace();
-                Result result = new Result("500",null,e.getMessage());
-                channel.writeAndFlush(JSON.toJSONString(result)).sync();
+                MessageProto.Response response = MessageProto.Response.newBuilder().setStatus(500).setMsg(e.getMessage()).build();
+                channel.writeAndFlush(response).sync();
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             }

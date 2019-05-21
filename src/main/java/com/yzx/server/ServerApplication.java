@@ -12,7 +12,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 @SpringBootApplication
 @MapperScan("com.yzx.server.dao")
 public class ServerApplication{
-
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(ServerApplication.class, args);
         Init.init(8088,context);
